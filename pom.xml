@@ -17,6 +17,7 @@
         <assertj.version>3.24.2</assertj.version>
         <jsonvalidator.version>5.5.6</jsonvalidator.version>
         <jackson.version>2.20.0</jackson.version>
+        <faker.version>1.0.2</faker.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.javafaker/javafaker -->
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>${faker.version}</version>
         </dependency>
     </dependencies>
 
