@@ -9,14 +9,18 @@ import io.restassured.response.Response;
 import model.Owner;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.logging.LoggerFactory;
 import util.ValidationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.platform.commons.logging.Logger;
 
 import static io.restassured.RestAssured.*;
 
 public class CrudOwnerTests extends ApiTestBase {
+
+    private final static Logger logger = LoggerFactory.getLogger(CrudOwnerTests.class);
 
     private final static ObjectMapper mapper = new ObjectMapper();
     private final static String FIRSTNAME_KEY = "firstName";
@@ -28,6 +32,8 @@ public class CrudOwnerTests extends ApiTestBase {
     private final static Faker faker = new Faker();
 
     private final static Map<String, Object> createOwnerData = createOwnerTestData();
+
+    private int ownerId = 0;
 
     private static Map<String, Object> createOwnerTestData() {
         Map<String, Object> data = new HashMap<>();
@@ -53,11 +59,18 @@ public class CrudOwnerTests extends ApiTestBase {
                     .spec(responseSpec)
                     .log().all()
                     .statusCode(201)
-                    //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
+                    .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
                     .extract().response();
-        //Owner owner = response.jsonPath().getObject("", Owner.class);
+        Owner owner = response.jsonPath().getObject("", Owner.class);
 
         SoftAssertions softly = new SoftAssertions();
-        //softly.assertThat(owner.)
+        softly.assertThat(owner.getFirstName()).isEqualTo(createOwnerData.get(FIRSTNAME_KEY));
+        softly.assertThat(owner.getLastName()).isEqualTo(createOwnerData.get(LASTNAME_KEY));
+        softly.assertThat(owner.getAddress()).isEqualTo(createOwnerData.get(ADDRESS_KEY));
+        softly.assertThat(owner.getCity()).isEqualTo(createOwnerData.get(CITY_KEY));
+        softly.assertThat(owner.getTelephone()).isEqualTo(createOwnerData.get(TELEPHONE_KEY));
+
+        ownerId = owner.getId();
+        logger.info(() -> "Owner with id " + ownerId + " created");
     }
 }
