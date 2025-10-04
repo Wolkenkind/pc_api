@@ -8,15 +8,21 @@ import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import model.Owner;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import util.DatabaseUtils;
 import util.ValidationUtils;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.platform.commons.logging.Logger;
 
 import static io.restassured.RestAssured.*;
+import static util.DatabaseUtils.OwnerTable.*;
 
 public class CrudOwnerTests extends ApiTestBase {
 
@@ -34,6 +40,12 @@ public class CrudOwnerTests extends ApiTestBase {
     private final static Map<String, Object> createOwnerData = createOwnerTestData();
 
     private int ownerId = 0;
+
+    @BeforeEach
+    @AfterEach
+    public void cleanup() throws SQLException {
+        DatabaseUtils.cleanDatabase();
+    }
 
     private static Map<String, Object> createOwnerTestData() {
         Map<String, Object> data = new HashMap<>();
@@ -72,5 +84,24 @@ public class CrudOwnerTests extends ApiTestBase {
 
         ownerId = owner.getId();
         logger.info(() -> "Owner with id " + ownerId + " created");
+
+        checkOwnerExistsInDatabase(ownerId, createOwnerData, softly);
+        softly.assertAll();
+    }
+
+    private void checkOwnerExistsInDatabase(int ownerId, Map<String, Object> data, SoftAssertions softly) {
+        JdbcTemplate template = DatabaseUtils.createTemplate();
+        String sql = "SELECT FROM owners * WHERE id = ?";
+        Map<String, Object> result = template.queryForMap(sql, ownerId);
+        for (String columnName: result.keySet()) {
+            switch (columnName) {
+                case FIRSTNAME_COL_NAME -> softly.assertThat(result.get(FIRSTNAME_COL_NAME)).isEqualTo(data.get(FIRSTNAME_KEY));
+                case LASTNAME_COL_NAME -> softly.assertThat(result.get(LASTNAME_COL_NAME)).isEqualTo(data.get(LASTNAME_KEY));
+                case ADDRESS_COL_NAME -> softly.assertThat(result.get(ADDRESS_COL_NAME)).isEqualTo(data.get(ADDRESS_KEY));
+                case CITY_COL_NAME -> softly.assertThat(result.get(CITY_COL_NAME)).isEqualTo(data.get(CITY_KEY));
+                case TELEPHONE_COL_NAME -> softly.assertThat(result.get(TELEPHONE_COL_NAME)).isEqualTo(data.get(TELEPHONE_KEY));
+                default -> softly.fail("Unexpected database table column: " + columnName);
+            }
+        }
     }
 }

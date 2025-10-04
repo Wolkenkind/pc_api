@@ -18,6 +18,8 @@
         <jsonvalidator.version>5.5.6</jsonvalidator.version>
         <jackson.version>2.20.0</jackson.version>
         <faker.version>1.0.2</faker.version>
+        <spring.jdbc.version>6.2.11</spring.jdbc.version>
+        <postgresql.driver.version>42.7.8</postgresql.driver.version>
     </properties>
 
     <dependencies>
@@ -59,6 +61,27 @@
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${faker.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+        <!-- needed for JDBC templates -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.jdbc.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.springframework/spring-tx -->
+        <!-- needed for auto rollback -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${spring.jdbc.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+        <!-- Database driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.driver.version}</version>
         </dependency>
     </dependencies>
 
