@@ -8,6 +8,8 @@ import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import model.Owner;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
@@ -20,7 +22,9 @@ import util.ValidationUtils;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.restassured.RestAssured.given;
 import static util.DatabaseUtils.OwnerTable.*;
@@ -36,7 +40,14 @@ public class CrudOwnerTests extends ApiTestBase {
     private final static String CITY_KEY = "city";
     private final static String TELEPHONE_KEY = "telephone";
     private final static String ID_KEY = "id";
+    private final static String PETS_KEY = "pets";
     private final static String CREATE_PATH = "/owners";
+    private final static String READ_PATH = "/owners/{ownerId}";
+    private final static String UPDATE_PATH = "/owners/{ownerId}";
+    private final static String DELETE_PATH = "/owners/{ownerId}";
+
+    private final static Set<String> READ_IGNORED_KEYS = Set.of(PETS_KEY);
+
     private final static Faker faker = new Faker();
 
     /*
@@ -48,8 +59,8 @@ public class CrudOwnerTests extends ApiTestBase {
             return null;
         }); // all the changes made in transaction 'execute' block will be rollbacked if not committed explicitly
      */
-    //@BeforeEach
-    //@AfterEach
+    @BeforeEach
+    @AfterEach
     public void cleanup() throws SQLException {
         DatabaseUtils.cleanDatabase();
 
@@ -94,7 +105,8 @@ public class CrudOwnerTests extends ApiTestBase {
         int ownerId = owner.getId();
         logger.info(() -> "Owner with id " + ownerId + " created");
 
-        assertOwnerData(getOwnerDataFromDatabase(ownerId), createOwnerData, softly);
+        createOwnerData.put(ID_KEY, ownerId);
+        assertOwnerDbData(getOwnerDataFromDatabase(ownerId), createOwnerData, softly);
         softly.assertAll();
     }
 
@@ -104,16 +116,34 @@ public class CrudOwnerTests extends ApiTestBase {
         return template.queryForMap(sql, ownerId);
     }
 
-    private void assertOwnerData(Map<String, Object> actualData, Map<String, Object> expectedData, SoftAssertions softly) {
-        for (String columnName: actualData.keySet()) {
+    private void assertOwnerDbData(Map<String, Object> actualDatabaseData, Map<String, Object> expectedData, SoftAssertions softly) {
+        for (String columnName: actualDatabaseData.keySet()) {
             switch (columnName) {
-                case FIRSTNAME_COL_NAME -> softly.assertThat(actualData.get(FIRSTNAME_COL_NAME)).isEqualTo(expectedData.get(FIRSTNAME_KEY));
-                case LASTNAME_COL_NAME -> softly.assertThat(actualData.get(LASTNAME_COL_NAME)).isEqualTo(expectedData.get(LASTNAME_KEY));
-                case ADDRESS_COL_NAME -> softly.assertThat(actualData.get(ADDRESS_COL_NAME)).isEqualTo(expectedData.get(ADDRESS_KEY));
-                case CITY_COL_NAME -> softly.assertThat(actualData.get(CITY_COL_NAME)).isEqualTo(expectedData.get(CITY_KEY));
-                case TELEPHONE_COL_NAME -> softly.assertThat(actualData.get(TELEPHONE_COL_NAME)).isEqualTo(expectedData.get(TELEPHONE_KEY));
+                case FIRSTNAME_COL_NAME -> softly.assertThat(actualDatabaseData.get(FIRSTNAME_COL_NAME)).isEqualTo(expectedData.get(FIRSTNAME_KEY));
+                case LASTNAME_COL_NAME -> softly.assertThat(actualDatabaseData.get(LASTNAME_COL_NAME)).isEqualTo(expectedData.get(LASTNAME_KEY));
+                case ADDRESS_COL_NAME -> softly.assertThat(actualDatabaseData.get(ADDRESS_COL_NAME)).isEqualTo(expectedData.get(ADDRESS_KEY));
+                case CITY_COL_NAME -> softly.assertThat(actualDatabaseData.get(CITY_COL_NAME)).isEqualTo(expectedData.get(CITY_KEY));
+                case TELEPHONE_COL_NAME -> softly.assertThat(actualDatabaseData.get(TELEPHONE_COL_NAME)).isEqualTo(expectedData.get(TELEPHONE_KEY));
+                case ID_COL_NAME -> softly.assertThat(actualDatabaseData.get(ID_COL_NAME)).isEqualTo(expectedData.get(ID_KEY));
                 default -> softly.fail("Unexpected database table column: " + columnName);
             }
+        }
+    }
+
+    private void assertOwnerData(Map<String, Object> actualData, Map<String, Object> expectedData, SoftAssertions softly) {
+        for (String keyName: actualData.keySet()) {
+            if (!READ_IGNORED_KEYS.contains(keyName)) {
+                Object actualValue = actualData.get(keyName);
+                Object expectedValue = expectedData.get(keyName);
+                if (expectedValue == null) {
+                    softly.fail("Unexpected key '%s' : '%s'".formatted(keyName, actualValue));
+                }
+                softly.assertThat(actualValue).isEqualTo(expectedValue);
+            }
+        }
+        List<Object> pets = (List<Object>) actualData.get(PETS_KEY);
+        if (!pets.isEmpty()) {
+            softly.fail("Pets should be empty");
         }
     }
 
@@ -122,9 +152,27 @@ public class CrudOwnerTests extends ApiTestBase {
         Map<String, Object> readOwnerData = createOwnerTestData();
         int ownerId = createOwnerInDatabase(readOwnerData);
         Map<String, Object> prepared = getOwnerDataFromDatabase(ownerId);
-        readOwnerData.put(ID_KEY, String.valueOf(ownerId));
+        readOwnerData.put(ID_KEY, ownerId);
         checkOwnerData(prepared, readOwnerData);
-        // ready for read test ...
+
+        Response response =
+                given()
+                        .spec(requestSpec)
+                        .pathParam("ownerId", ownerId)
+                        .log().all()
+                .when()
+                        .get(READ_PATH)
+                .then()
+                        .spec(responseSpec)
+                        .log().all()
+                        .statusCode(200)
+                        .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
+                        .extract().response();
+        Map<String, Object> ownerData = response.jsonPath().getMap("");
+
+        SoftAssertions softly = new SoftAssertions();
+        assertOwnerData(ownerData, readOwnerData, softly);
+        softly.assertAll();
     }
 
     private int createOwnerInDatabase(Map<String, Object> ownerData) {
@@ -141,14 +189,6 @@ public class CrudOwnerTests extends ApiTestBase {
             ps.setString(5, (String) ownerData.get(TELEPHONE_KEY));
             return ps;
         }, keyHolder);
-        /*template.update(
-                sql,
-                ownerData.get(FIRSTNAME_KEY),
-                ownerData.get(LASTNAME_KEY),
-                ownerData.get(ADDRESS_KEY),
-                ownerData.get(CITY_KEY),
-                ownerData.get(TELEPHONE_KEY)
-        );*/
 
         return keyHolder.getKeyAs(Integer.class);
     }
@@ -178,12 +218,47 @@ public class CrudOwnerTests extends ApiTestBase {
                     throw new IllegalStateException(exceptionMessage);
                 }
                     break;
-                case ID_COL_NAME: if (!String.valueOf(actualData.get(ID_COL_NAME)).equals(expectedData.get(ID_KEY))) {
+                case ID_COL_NAME: if (!actualData.get(ID_COL_NAME).equals(expectedData.get(ID_KEY))) {
                     throw new IllegalStateException(exceptionMessage);
                 }
                     break;
                 default: throw new IllegalStateException("Unexpected database table column " + columnName);
             }
         }
+    }
+
+    @Test
+    public void updateOwner() throws JsonProcessingException {
+        Map<String, Object> readOwnerData = createOwnerTestData();
+        int ownerId = createOwnerInDatabase(readOwnerData);
+        Map<String, Object> prepared = getOwnerDataFromDatabase(ownerId);
+        readOwnerData.put(ID_KEY, ownerId);
+        checkOwnerData(prepared, readOwnerData);
+        Map<String, Object> updateOwnerData = createOwnerTestData();
+        String body = mapper.writeValueAsString(updateOwnerData);
+
+        updateOwnerData.put(ID_KEY, ownerId);
+
+        Response response =
+                given()
+                        .spec(requestSpec)
+                        .pathParam("ownerId", ownerId)
+                        .body(body)
+                        .log().all()
+                        .when()
+                        .put(UPDATE_PATH)
+                        .then()
+                        .spec(responseSpec)
+                        .log().all()
+                        //.statusCode(200) //according to Swagger it should be 200 OK with response body, but in reality it's 204 with no body
+                        .statusCode(204)
+                        //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
+                        .extract().response();
+        //Map<String, Object> ownerData = response.jsonPath().getMap("");
+
+        SoftAssertions softly = new SoftAssertions();
+        //assertOwnerData(ownerData, updateOwnerData, softly);
+        assertOwnerDbData(getOwnerDataFromDatabase(ownerId), updateOwnerData, softly);
+        softly.assertAll();
     }
 }
