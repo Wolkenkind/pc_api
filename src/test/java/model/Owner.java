@@ -1,19 +1,36 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Owner {
+    public static final String FIELD_FIRSTNAME = "firstName";
+    public static final String FIELD_LASTNAME = "lastName";
+    public static final String FIELD_ADDRESS = "address";
+    public static final String FIELD_CITY = "city";
+    public static final String FIELD_TELEPHONE = "telephone";
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_PETS = "pets";
+
     private final static Pattern LASTNAME_PATTERN = Pattern.compile("^[\\p{L}]+([ '-][\\p{L}]+){0,2}\\.?$");
     private final static Pattern FIRSTNAME_PATTERN = Pattern.compile("^[\\p{L}]+([ '-][\\p{L}]+){0,2}$");
     private final static Pattern TELEPHONE_PATTERN = Pattern.compile("^[0-9]*$");
+    @JsonProperty("firstName")
     private String firstName;
+    @JsonProperty("lastName")
     private String lastName;
+    @JsonProperty("address")
     private String address;
+    @JsonProperty("city")
     private String city;
+    @JsonProperty("telephone")
     private String telephone;
+    @JsonProperty("id")
     private int id;
+    @JsonProperty("pets")
     private List<Pet> pets;
 
     public String getFirstName() {
