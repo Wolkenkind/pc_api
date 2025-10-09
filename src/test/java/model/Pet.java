@@ -1,14 +1,28 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public class Pet {
+    public static final String FIELD_NAME = "name";
+    public static final String FIELD_BIRTHDATE = "birthDate";
+    public static final String FIELD_TYPE = "type";
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_OWNERID = "ownerId";
+    public static final String FIELD_VISITS = "visits";
+    @JsonProperty("name")
     private String name;
+    @JsonProperty("birthDate")
     private LocalDate birthDate;
+    @JsonProperty("type")
     private PetType type;
+    @JsonProperty("id")
     private int id;
+    @JsonProperty("ownerId")
     private int ownerId;
+    @JsonProperty("visits")
     private List<Visit> visits;
 
     public String getName() {

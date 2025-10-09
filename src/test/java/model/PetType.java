@@ -1,7 +1,14 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PetType {
+    public static final String FIELD_NAME = "name";
+    public static final String FIELD_ID = "id";
+
+    @JsonProperty("name")
     private String name;
+    @JsonProperty("id")
     private int id;
 
     public String getName() {

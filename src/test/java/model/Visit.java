@@ -1,11 +1,22 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDate;
 
 public class Visit {
+    public static final String FIELD_DATE = "date";
+    public static final String FIELD_DESCRIPTION = "description";
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_PETID = "petId";
+
+    @JsonProperty("date")
     private LocalDate date;
+    @JsonProperty("description")
     private String description;
+    @JsonProperty("id")
     private int id;
+    @JsonProperty("petId")
     private int petId;
 
     public LocalDate getDate() {
