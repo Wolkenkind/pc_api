@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import static base.ApiConstants.*;
 import static check.OwnerChecker.*;
-import static config.ApiConfig.RESPONSE_TIME_THRESHOLD;
+import static config.ApiConfig.*;
 import static data.OwnerFactory.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.lessThan;
@@ -178,6 +178,36 @@ public class CrudOwnerTests extends ApiTestBase {
         //assertOwnerData(ownerData, deleteOwnerData, softly);
         Map<String, Object> deleted = getOwnerDataFromDatabase(ownerId);
         softly.assertThat(deleted).hasSize(0);
+        softly.assertAll();
+    }
+
+    //negative
+
+    @Test
+    public void createOwnerError() throws JsonProcessingException {
+        Map<String, Object> createOwnerData = getOwnerTestInvalidData();
+        String body = mapper.writeValueAsString(createOwnerData);
+        Response response =
+                given()
+                        .spec(requestSpec)
+                        .body(body)
+                        .log().all()
+                        .when()
+                        .post(CREATE_PATH)
+                        .then()
+                        .spec(responseSpec)
+                        .log().all()
+                        .statusCode(400)
+                        .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.API_PROBLEM_SCHEMA))
+                        .extract().response();
+
+        Map<String, Object> message = response.jsonPath().getMap("");
+
+        SoftAssertions softly = new SoftAssertions();
+
+        softly.assertThat(message.get("type")).isEqualTo( BASE_URL + BASE_API_PATH + CREATE_PATH);
+        softly.assertThat(message.get("status")).isEqualTo(400);
+
         softly.assertAll();
     }
 }

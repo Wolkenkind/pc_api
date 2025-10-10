@@ -38,10 +38,17 @@ public class Owner {
     }
 
     public void setFirstName(String firstName) {
+        if (firstName.isEmpty() || firstName.length() > 30) {
+            throw new IllegalArgumentException("First name length must be between 0 and 30 characters, given's value length is " + firstName.length());
+        }
         Matcher matcher = FIRSTNAME_PATTERN.matcher(firstName);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("First name doesn't match the needed format (" + FIRSTNAME_PATTERN.pattern() + ")");
         }
+        this.firstName = firstName;
+    }
+
+    public void setFirstNameNoValidation(String firstName) {
         this.firstName = firstName;
     }
 
@@ -50,10 +57,17 @@ public class Owner {
     }
 
     public void setLastName(String lastName) {
+        if (lastName.isEmpty() || lastName.length() > 30) {
+            throw new IllegalArgumentException("Last name length must be between 0 and 30 characters, given's value length is " + lastName.length());
+        }
         Matcher matcher = LASTNAME_PATTERN.matcher(lastName);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Last name doesn't match the needed format (" + LASTNAME_PATTERN.pattern() + ")");
         }
+        this.lastName = lastName;
+    }
+
+    public void setLastNameNoValidation(String lastName) {
         this.lastName = lastName;
     }
 
@@ -65,8 +79,12 @@ public class Owner {
         if (!address.isEmpty() && address.length() <= 255) {
             this.address = address;
         } else {
-            throw new IllegalArgumentException("Address length must be between 0 and 256 characters");
+            throw new IllegalArgumentException("Address length must be between 0 and 256 characters, given's value length is " + address.length());
         }
+    }
+
+    public void setAddressNoValidation(String address) {
+        this.address = address;
     }
 
     public String getCity() {
@@ -74,11 +92,15 @@ public class Owner {
     }
 
     public void setCity(String city) {
-        if (!address.isEmpty() && address.length() <= 80) {
+        if (!city.isEmpty() && city.length() <= 80) {
             this.city = city;
         } else {
-            throw new IllegalArgumentException("City length must be between 0 and 81 characters");
+            throw new IllegalArgumentException("City length must be between 0 and 81 characters, given's value length is " + city.length());
         }
+    }
+
+    public void setCityNoValidation(String city) {
+        this.city = city;
     }
 
     public String getTelephone() {
@@ -86,10 +108,17 @@ public class Owner {
     }
 
     public void setTelephone(String telephone) {
+        if (telephone.isEmpty() || telephone.length() > 20) {
+            throw new IllegalArgumentException("Telephone length must be between 0 and 20 characters, given's value length is " + telephone.length());
+        }
         Matcher matcher = TELEPHONE_PATTERN.matcher(telephone);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Telephone doesn't match the needed format (" + TELEPHONE_PATTERN.pattern() + ")");
         }
+        this.telephone = telephone;
+    }
+
+    public void setTelephoneNoValidation(String telephone) {
         this.telephone = telephone;
     }
 
@@ -101,6 +130,10 @@ public class Owner {
         if (id < 0) {
             throw new IllegalArgumentException("Id must be positive");
         }
+        this.id = id;
+    }
+
+    public void setIdNoValidation(int id) {
         this.id = id;
     }
 

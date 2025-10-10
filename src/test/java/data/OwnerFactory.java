@@ -14,8 +14,8 @@ import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
 
-import static model.Owner.*;
 import static db.DatabaseConstants.OwnerTable.*;
+import static model.Owner.*;
 
 public class OwnerFactory {
 
@@ -36,6 +36,73 @@ public class OwnerFactory {
         data.put(FIELD_TELEPHONE, faker.number().digits(10));
         logger.debug(() -> "Generated following KV: '" + FIELD_TELEPHONE + "' = '" + data.get(FIELD_TELEPHONE) + "'");
         return data;
+    }
+
+    public static Map<String, Object> getOwnerTestInvalidData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put(FIELD_FIRSTNAME, getOwnerAgainstPatternFirstName());
+        logger.debug(() -> "Generated following KV: '" + FIELD_FIRSTNAME + "' = '" + data.get(FIELD_FIRSTNAME) + "'");
+        data.put(FIELD_LASTNAME, getOwnerTooLongLastName());
+        logger.debug(() -> "Generated following KV: '" + FIELD_LASTNAME + "' = '" + data.get(FIELD_LASTNAME) + "'");
+        data.put(FIELD_ADDRESS, getOwnerTooLongAddress());
+        logger.debug(() -> "Generated following KV: '" + FIELD_ADDRESS + "' = '" + data.get(FIELD_ADDRESS) + "'");
+        data.put(FIELD_CITY, getOwnerTooShortCity());
+        logger.debug(() -> "Generated following KV: '" + FIELD_CITY + "' = '" + data.get(FIELD_CITY) + "'");
+        data.put(FIELD_TELEPHONE, getOwnerTooLongTelephone());
+        logger.debug(() -> "Generated following KV: '" + FIELD_TELEPHONE + "' = '" + data.get(FIELD_TELEPHONE) + "'");
+        return data;
+    }
+
+    public static String getOwnerTooShortFirstName() {
+        return "";
+    }
+
+    public static String getOwnerTooLongFirstName() {
+        return "Firstname longerthanthirtycharacters";
+    }
+
+    public static String getOwnerAgainstPatternFirstName() {
+        return "John'john'john'johnny";
+    }
+
+    public static String getOwnerTooShortLastName() {
+        return "";
+    }
+
+    public static String getOwnerTooLongLastName() {
+        return "Lastname longerthanthirtycharacters";
+    }
+
+    public static String getOwnerAgainstPatternLastName() {
+        return "Doe-doe-doe-doe-doe";
+    }
+
+    public static String getOwnerTooShortAddress() {
+        return "";
+    }
+
+    public static String getOwnerTooLongAddress() {
+        return "Longest-Cityname-longer-than-Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu str. 4729805379023485643090853840234785639056483024820438320, bld. 2147483647, fl. 13";
+    }
+
+    public static String getOwnerTooShortCity() {
+        return "";
+    }
+
+    public static String getOwnerTooLongCity() {
+        return "Longest-Cityname-longer-than-Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch";
+    }
+
+    public static String getOwnerTooShortTelephone() {
+        return "";
+    }
+
+    public static String getOwnerTooLongTelephone() {
+        return "1234567890123456789012345";
+    }
+
+    public static int getOwnerNegativeId() {
+        return -42;
     }
 
     public static Map<String, Object> getOwnerDataFromDatabase(int ownerId) {
