@@ -12,6 +12,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import util.DatabaseUtils;
@@ -183,9 +185,9 @@ public class CrudOwnerTests extends ApiTestBase {
 
     //negative
 
-    @Test
-    public void createOwnerError() throws JsonProcessingException {
-        Map<String, Object> createOwnerData = getOwnerTestInvalidData();
+    @ParameterizedTest
+    @MethodSource("data.OwnerFactory#getNegativeTestData")
+    public void createOwnerError(Map<String, Object> createOwnerData, int expectedCode) throws JsonProcessingException {
         String body = mapper.writeValueAsString(createOwnerData);
         Response response =
                 given()
@@ -206,7 +208,7 @@ public class CrudOwnerTests extends ApiTestBase {
         SoftAssertions softly = new SoftAssertions();
 
         softly.assertThat(message.get("type")).isEqualTo( BASE_URL + BASE_API_PATH + CREATE_PATH);
-        softly.assertThat(message.get("status")).isEqualTo(400);
+        softly.assertThat(message.get("status")).isEqualTo(expectedCode);
 
         softly.assertAll();
     }

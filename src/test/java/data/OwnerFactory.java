@@ -1,7 +1,11 @@
 package data;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import model.Owner;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -13,6 +17,7 @@ import util.DatabaseUtils;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static db.DatabaseConstants.OwnerTable.*;
 import static model.Owner.*;
@@ -20,8 +25,86 @@ import static model.Owner.*;
 public class OwnerFactory {
 
     private final static Logger logger = LoggerFactory.getLogger(OwnerFactory.class);
+    private final static ObjectMapper mapper = new ObjectMapper();
 
     private final static Faker faker = new Faker();
+
+    public static Stream<Arguments> getNegativeTestData() throws JsonProcessingException {
+        Map<String, Object> randomCorrectData = getRandomOwnerTestData();
+
+        //deep copy through serialization
+        Map<String, Object> onlyLongFirstName = deepCopy(randomCorrectData);
+        onlyLongFirstName.put(FIELD_FIRSTNAME, getOwnerTooLongFirstName());
+
+        Map<String, Object> onlyShortFirstName = deepCopy(randomCorrectData);
+        onlyShortFirstName.put(FIELD_FIRSTNAME, getOwnerTooShortFirstName());
+
+        Map<String, Object> onlyInvalidFirstName = deepCopy(randomCorrectData);
+        onlyInvalidFirstName.put(FIELD_FIRSTNAME, getOwnerAgainstPatternFirstName());
+
+        Map<String, Object> onlyLongLastName = deepCopy(randomCorrectData);
+        onlyLongLastName.put(FIELD_LASTNAME, getOwnerTooLongLastName());
+
+        Map<String, Object> onlyShortLastName = deepCopy(randomCorrectData);
+        onlyShortLastName.put(FIELD_LASTNAME, getOwnerTooShortLastName());
+
+        Map<String, Object> onlyInvalidLastName = deepCopy(randomCorrectData);
+        onlyInvalidLastName.put(FIELD_LASTNAME, getOwnerAgainstPatternLastName());
+
+        Map<String, Object> onlyShortAddress = deepCopy(randomCorrectData);
+        onlyShortAddress.put(FIELD_ADDRESS, getOwnerTooShortAddress());
+
+        Map<String, Object> onlyLongAddress = deepCopy(randomCorrectData);
+        onlyLongAddress.put(FIELD_ADDRESS, getOwnerTooLongAddress());
+
+        Map<String, Object> onlyShortCity = deepCopy(randomCorrectData);
+        onlyShortCity.put(FIELD_CITY, getOwnerTooShortCity());
+
+        Map<String, Object> onlyLongCity = deepCopy(randomCorrectData);
+        onlyLongCity.put(FIELD_CITY, getOwnerTooLongCity());
+
+        Map<String, Object> onlyLongTelephone = deepCopy(randomCorrectData);
+        onlyLongTelephone.put(FIELD_TELEPHONE, getOwnerTooLongTelephone());
+
+        Map<String, Object> onlyShortTelephone = deepCopy(randomCorrectData);
+        onlyShortTelephone.put(FIELD_TELEPHONE, getOwnerTooShortTelephone());
+
+        Map<String, Object> onlyInvalidTelephone = deepCopy(randomCorrectData);
+        onlyInvalidTelephone.put(FIELD_TELEPHONE, getOwnerAgainstPatternTelephone());
+
+        return Stream.of(
+                Arguments.of(
+                        Named.named("Valid data with invalid first name (too long)", onlyLongFirstName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid first name (too short)", onlyShortFirstName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid first name (doesn't comply with pattern)", onlyInvalidFirstName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid last name (too long)", onlyLongLastName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid last name (too short)", onlyShortLastName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid last name (doesn't comply with pattern)", onlyInvalidLastName), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid address (too long)", onlyLongAddress), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid address (too short)", onlyShortAddress), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid city (too long)", onlyLongCity), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid city (too short)", onlyShortCity), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid telephone (too long)", onlyLongTelephone), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid telephone (too short)", onlyShortTelephone), 400),
+                Arguments.of(
+                        Named.named("Valid data with invalid telephone (doesn't comply with pattern)", onlyInvalidTelephone), 400)
+        );
+    }
+
+    private static Map<String, Object> deepCopy(Map<String, Object> map) throws JsonProcessingException {
+        return mapper.readValue(mapper.writeValueAsString(map), Map.class);
+    }
 
     public static Map<String, Object> getRandomOwnerTestData() {
         Map<String, Object> data = new HashMap<>();
@@ -99,6 +182,10 @@ public class OwnerFactory {
 
     public static String getOwnerTooLongTelephone() {
         return "1234567890123456789012345";
+    }
+
+    public static String getOwnerAgainstPatternTelephone() {
+        return "1234567890*/-a";
     }
 
     public static int getOwnerNegativeId() {
