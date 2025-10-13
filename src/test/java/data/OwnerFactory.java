@@ -6,8 +6,8 @@ import com.github.javafaker.Faker;
 import model.Owner;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import static db.DatabaseConstants.OwnerTable.*;
 import static model.Owner.*;
+import static net.logstash.logback.argument.StructuredArguments.kv;
 
 public class OwnerFactory {
 
@@ -28,6 +29,8 @@ public class OwnerFactory {
     private final static ObjectMapper mapper = new ObjectMapper();
 
     private final static Faker faker = new Faker();
+
+    private final static String GEN_TEST_DATA = "Generated test data field";
 
     public static Stream<Arguments> getNegativeTestData() throws JsonProcessingException {
         Map<String, Object> randomCorrectData = getRandomOwnerTestData();
@@ -109,30 +112,30 @@ public class OwnerFactory {
     public static Map<String, Object> getRandomOwnerTestData() {
         Map<String, Object> data = new HashMap<>();
         data.put(FIELD_FIRSTNAME, faker.name().firstName());
-        logger.debug(() -> "Generated following KV: '" + FIELD_FIRSTNAME + "' = '" + data.get(FIELD_FIRSTNAME) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_FIRSTNAME), kv("value", data.get(FIELD_FIRSTNAME)));
         data.put(FIELD_LASTNAME, faker.name().lastName());
-        logger.debug(() -> "Generated following KV: '" + FIELD_LASTNAME + "' = '" + data.get(FIELD_LASTNAME) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_LASTNAME), kv("value", data.get(FIELD_LASTNAME)));
         data.put(FIELD_ADDRESS, faker.address().fullAddress());
-        logger.debug(() -> "Generated following KV: '" + FIELD_ADDRESS + "' = '" + data.get(FIELD_ADDRESS) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_ADDRESS), kv("value", data.get(FIELD_ADDRESS)));
         data.put(FIELD_CITY, faker.address().city());
-        logger.debug(() -> "Generated following KV: '" + FIELD_CITY + "' = '" + data.get(FIELD_CITY) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_CITY), kv("value", data.get(FIELD_CITY)));
         data.put(FIELD_TELEPHONE, faker.number().digits(10));
-        logger.debug(() -> "Generated following KV: '" + FIELD_TELEPHONE + "' = '" + data.get(FIELD_TELEPHONE) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_TELEPHONE), kv("value", data.get(FIELD_TELEPHONE)));
         return data;
     }
 
     public static Map<String, Object> getOwnerTestInvalidData() {
         Map<String, Object> data = new HashMap<>();
         data.put(FIELD_FIRSTNAME, getOwnerAgainstPatternFirstName());
-        logger.debug(() -> "Generated following KV: '" + FIELD_FIRSTNAME + "' = '" + data.get(FIELD_FIRSTNAME) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_FIRSTNAME), kv("value", data.get(FIELD_FIRSTNAME)));
         data.put(FIELD_LASTNAME, getOwnerTooLongLastName());
-        logger.debug(() -> "Generated following KV: '" + FIELD_LASTNAME + "' = '" + data.get(FIELD_LASTNAME) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_LASTNAME), kv("value", data.get(FIELD_LASTNAME)));
         data.put(FIELD_ADDRESS, getOwnerTooLongAddress());
-        logger.debug(() -> "Generated following KV: '" + FIELD_ADDRESS + "' = '" + data.get(FIELD_ADDRESS) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_ADDRESS), kv("value", data.get(FIELD_ADDRESS)));
         data.put(FIELD_CITY, getOwnerTooShortCity());
-        logger.debug(() -> "Generated following KV: '" + FIELD_CITY + "' = '" + data.get(FIELD_CITY) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_CITY), kv("value", data.get(FIELD_CITY)));
         data.put(FIELD_TELEPHONE, getOwnerTooLongTelephone());
-        logger.debug(() -> "Generated following KV: '" + FIELD_TELEPHONE + "' = '" + data.get(FIELD_TELEPHONE) + "'");
+        logger.debug(GEN_TEST_DATA, kv("field", FIELD_TELEPHONE), kv("value", data.get(FIELD_TELEPHONE)));
         return data;
     }
 

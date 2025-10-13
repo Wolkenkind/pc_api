@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- JSON Appender for structured logging -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
+            <customFields>{
+                "test_framework": "${TEST_FRAMEWORK:-petclinic-api-tests}",
+                "environment": "${ENVIRONMENT:-local}",
+                "test_run_id": "${TEST_RUN_ID:-local-${user.name}}",
+                "build_version": "${project.version}",
+                "java_version": "${java.version}"
+            }</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Standard Console Appender for local development -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Choose appender based on profile -->
+    <if condition='property("LOG_FORMAT").equals("json")'>
+        <then>
+            <root level="INFO">
+                <appender-ref ref="JSON" />
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="STDOUT" />
+            </root>
+        </else>
+    </if>
+
+    <!-- Package-specific logging -->
+    <logger name="api" level="DEBUG"/>
+    <logger name="data" level="DEBUG"/>
+
+    <!-- CRITICAL: Configure RestAssured to use SLF4J -->
+    <logger name="io.restassured" level="DEBUG"/>
+    <logger name="io.restassured.filter.log" level="DEBUG"/>
+
+    <!-- This captures the request/response logging from filters -->
+    <logger name="io.restassured.filter.log.RequestLoggingFilter" level="DEBUG"/>
+    <logger name="io.restassured.filter.log.ResponseLoggingFilter" level="DEBUG"/>
+    <logger name="io.restassured.filter.log.ErrorLoggingFilter" level="DEBUG"/>
+
+    <logger name="base.Slf4JLoggingFilter" level="DEBUG"/>
+</configuration>

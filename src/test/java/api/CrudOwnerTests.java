@@ -1,8 +1,10 @@
 package api;
 
 import base.ApiTestBase;
+import base.Slf4JLoggingFilter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.restassured.RestAssured;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
@@ -14,13 +16,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import util.DatabaseUtils;
 import util.ValidationUtils;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static base.ApiConstants.*;
@@ -28,6 +32,7 @@ import static check.OwnerChecker.*;
 import static config.ApiConfig.*;
 import static data.OwnerFactory.*;
 import static io.restassured.RestAssured.given;
+import static net.logstash.logback.argument.StructuredArguments.kv;
 import static org.hamcrest.Matchers.lessThan;
 
 public class CrudOwnerTests extends ApiTestBase {
@@ -45,6 +50,11 @@ public class CrudOwnerTests extends ApiTestBase {
             return null;
         }); // all the changes made in transaction 'execute' block will be rollbacked if not committed explicitly
      */
+
+    @BeforeEach
+    public void setupRestAssuredLogging() {
+        RestAssured.filters(new Slf4JLoggingFilter());
+    }
     @BeforeEach
     @AfterEach
     public void cleanup() throws SQLException {
@@ -53,21 +63,30 @@ public class CrudOwnerTests extends ApiTestBase {
 
     @Test
     public void createOwner() throws JsonProcessingException {
+        MDC.put("testId", UUID.randomUUID().toString());
+        try {
+            logger.info("Start test createOwner");
+            createOwnerLogic();
+            logger.info("Success test createOwner");
+        } finally {
+            MDC.clear();
+        }
+    }
+
+    private void createOwnerLogic() throws JsonProcessingException {
         Map<String, Object> createOwnerData = getRandomOwnerTestData();
         String body = mapper.writeValueAsString(createOwnerData);
         Response response =
                 given()
-                    .spec(requestSpec)
-                    .body(body)
-                    .log().all()
-                .when()
-                    .post(CREATE_PATH)
-                .then()
-                    .spec(responseSpec)
-                    .log().all()
-                    .statusCode(201)
-                    .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
-                    .extract().response();
+                        .spec(requestSpec)
+                        .body(body)
+                        .when()
+                        .post(CREATE_PATH)
+                        .then()
+                        .spec(responseSpec)
+                        .statusCode(201)
+                        .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
+                        .extract().response();
         Owner owner = response.jsonPath().getObject("", Owner.class);
 
         SoftAssertions softly = new SoftAssertions();
@@ -78,7 +97,8 @@ public class CrudOwnerTests extends ApiTestBase {
         softly.assertThat(owner.getTelephone()).isEqualTo(createOwnerData.get(Owner.FIELD_TELEPHONE));
 
         int ownerId = owner.getId();
-        logger.info(() -> "Owner with id " + ownerId + " created");
+        logger.info("Owner with id {} created", ownerId, kv(Owner.FIELD_ID, ownerId));
+        MDC.put(Owner.FIELD_ID, String.valueOf(ownerId));
 
         createOwnerData.put(Owner.FIELD_ID, ownerId);
         assertOwnerDbData(getOwnerDataFromDatabase(ownerId), createOwnerData, softly);
@@ -97,12 +117,10 @@ public class CrudOwnerTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .pathParam("ownerId", ownerId)
-                        .log().all()
                 .when()
                         .get(READ_PATH)
                 .then()
                         .spec(responseSpec)
-                        .log().all()
                         .statusCode(200)
                         .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
                         .extract().response();
@@ -130,12 +148,10 @@ public class CrudOwnerTests extends ApiTestBase {
                         .spec(requestSpec)
                         .pathParam("ownerId", ownerId)
                         .body(body)
-                        .log().all()
                         .when()
                         .put(UPDATE_PATH)
                         .then()
                         .spec(responseSpec)
-                        .log().all()
                         //.statusCode(200) //according to Swagger it should be 200 OK with response body, but in reality it's 204 with no body
                         .statusCode(204)
                         //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
@@ -164,12 +180,10 @@ public class CrudOwnerTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .pathParam("ownerId", ownerId)
-                        .log().all()
                         .when()
                         .delete(DELETE_PATH)
                         .then()
                         .spec(noContentResponse)
-                        .log().all()
                         //.statusCode(200) //according to Swagger it should be 200 OK with response body, but in reality it's 204 with no body
                         .statusCode(204)
                         //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
@@ -193,12 +207,10 @@ public class CrudOwnerTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .body(body)
-                        .log().all()
                         .when()
                         .post(CREATE_PATH)
                         .then()
                         .spec(responseSpec)
-                        .log().all()
                         .statusCode(400)
                         .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.API_PROBLEM_SCHEMA))
                         .extract().response();
