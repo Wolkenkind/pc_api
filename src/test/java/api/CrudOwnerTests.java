@@ -1,10 +1,8 @@
 package api;
 
 import base.ApiTestBase;
-import base.Slf4JLoggingFilter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.restassured.RestAssured;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
@@ -24,7 +22,6 @@ import util.ValidationUtils;
 
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static base.ApiConstants.*;
@@ -52,25 +49,14 @@ public class CrudOwnerTests extends ApiTestBase {
      */
 
     @BeforeEach
-    public void setupRestAssuredLogging() {
-        RestAssured.filters(new Slf4JLoggingFilter());
-    }
-    @BeforeEach
     @AfterEach
     public void cleanup() throws SQLException {
         DatabaseUtils.cleanDatabase();
     }
 
     @Test
-    public void createOwner() throws JsonProcessingException {
-        MDC.put("testId", UUID.randomUUID().toString());
-        try {
-            logger.info("Start test createOwner");
-            createOwnerLogic();
-            logger.info("Success test createOwner");
-        } finally {
-            MDC.clear();
-        }
+    public void createOwner() throws Exception {
+        executeWithLogging(this::createOwnerLogic, "createOwner");
     }
 
     private void createOwnerLogic() throws JsonProcessingException {
@@ -106,7 +92,11 @@ public class CrudOwnerTests extends ApiTestBase {
     }
 
     @Test
-    public void readOwner() {
+    public void readOwner() throws Exception {
+        executeWithLogging(this::readOwnerLogic, "readOwner");
+    }
+
+    private void readOwnerLogic() {
         Map<String, Object> readOwnerData = getRandomOwnerTestData();
         int ownerId = createOwnerInDatabase(readOwnerData);
         Map<String, Object> prepared = getOwnerDataFromDatabase(ownerId);
@@ -117,9 +107,9 @@ public class CrudOwnerTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .pathParam("ownerId", ownerId)
-                .when()
+                        .when()
                         .get(READ_PATH)
-                .then()
+                        .then()
                         .spec(responseSpec)
                         .statusCode(200)
                         .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
@@ -132,7 +122,11 @@ public class CrudOwnerTests extends ApiTestBase {
     }
 
     @Test
-    public void updateOwner() throws JsonProcessingException {
+    public void updateOwner() throws Exception {
+        executeWithLogging(this::updateOwnerLogic, "updateOwner");
+    }
+
+    private void updateOwnerLogic() throws JsonProcessingException {
         Map<String, Object> readOwnerData = getRandomOwnerTestData();
         int ownerId = createOwnerInDatabase(readOwnerData);
         Map<String, Object> prepared = getOwnerDataFromDatabase(ownerId);
@@ -165,7 +159,11 @@ public class CrudOwnerTests extends ApiTestBase {
     }
 
     @Test
-    public void deleteOwner() {
+    public void deleteOwner() throws Exception {
+        executeWithLogging(this::deleteOwnerLogic, "deleteOwner");
+    }
+
+    private void deleteOwnerLogic() {
         ResponseSpecification noContentResponse = new ResponseSpecBuilder()
                 .expectResponseTime(lessThan(RESPONSE_TIME_THRESHOLD), TimeUnit.MILLISECONDS)
                 .build();
@@ -201,7 +199,14 @@ public class CrudOwnerTests extends ApiTestBase {
 
     @ParameterizedTest
     @MethodSource("data.OwnerFactory#getNegativeTestData")
-    public void createOwnerError(Map<String, Object> createOwnerData, int expectedCode) throws JsonProcessingException {
+    public void createOwnerError(Map<String, Object> createOwnerData, int expectedCode) throws Exception {
+        //this won't log parameters so if needed more complicated solution is to be implemented, e.g. with test context
+        executeWithLogging(
+                () -> createOwnerErrorLogic(createOwnerData, expectedCode),
+                "createOwnerError");
+    }
+
+    private void createOwnerErrorLogic(Map<String, Object> createOwnerData, int expectedCode) throws JsonProcessingException {
         String body = mapper.writeValueAsString(createOwnerData);
         Response response =
                 given()

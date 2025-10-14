@@ -11,11 +11,15 @@ import io.restassured.specification.ResponseSpecification;
 import mapper.OwnerMapper;
 import model.Owner;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import util.DatabaseUtils;
 import util.ValidationUtils;
 
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +39,18 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
 
     private final static ObjectMapper mapper = new ObjectMapper();
 
+    @BeforeEach
+    @AfterEach
+    public void cleanup() throws SQLException {
+        DatabaseUtils.cleanDatabase();
+    }
+
     @Test
-    public void createReadWorkflowTest() throws JsonProcessingException {
+    public void createReadWorkflowTest() throws Exception {
+        executeWithLogging(this::createReadWorkflowTestLogic, "createReadWorkflowTest");
+    }
+
+    private void createReadWorkflowTestLogic() throws JsonProcessingException {
         SoftAssertions softly = new SoftAssertions();
 
         Owner owner = createOwnerWithApi(softly);
@@ -46,7 +60,11 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
-    public void createUpdateWorkflowTest() throws JsonProcessingException {
+    public void createUpdateWorkflowTest() throws Exception {
+        executeWithLogging(this::createUpdateWorkflowTestLogic, "createUpdateWorkflowTest");
+    }
+
+    private void createUpdateWorkflowTestLogic() throws JsonProcessingException {
         SoftAssertions softly = new SoftAssertions();
 
         createUpdateLogic(softly);
@@ -55,7 +73,11 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
-    public void createDeleteWorkflowTest() throws JsonProcessingException {
+    public void createDeleteWorkflowTest() throws Exception {
+        executeWithLogging(this::createDeleteWorkflowTestLogic, "createDeleteWorkflowTest");
+    }
+
+    private void createDeleteWorkflowTestLogic() throws JsonProcessingException {
         SoftAssertions softly = new SoftAssertions();
 
         Owner owner = createOwnerWithApi(softly);
@@ -68,12 +90,10 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .pathParam("ownerId", owner.getId())
-                        .log().all()
                         .when()
                         .delete(DELETE_PATH)
                         .then()
                         .spec(noContentResponse)
-                        .log().all()
                         //.statusCode(200) //according to Swagger it should be 200 OK with response body, but in reality it's 204 with no body
                         .statusCode(204)
                         //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
@@ -87,7 +107,11 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
-    public void updateReadWorkflowTest() throws JsonProcessingException {
+    public void updateReadWorkflowTest() throws Exception {
+        executeWithLogging(this::updateReadWorkflowTestLogic, "executeWithLogging");
+    }
+
+    private void updateReadWorkflowTestLogic() throws JsonProcessingException {
         SoftAssertions softly = new SoftAssertions();
 
         Owner updatedOwner = createUpdateLogic(softly);
@@ -103,12 +127,10 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .body(body)
-                        .log().all()
                         .when()
                         .post(CREATE_PATH)
                         .then()
                         .spec(responseSpec)
-                        .log().all()
                         .statusCode(201)
                         .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
                         .extract().response();
@@ -121,7 +143,7 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
         softly.assertThat(owner.getTelephone()).isEqualTo(ownerData.get(Owner.FIELD_TELEPHONE));
 
         int ownerId = owner.getId();
-        logger.info(() -> "Owner with id " + ownerId + " created");
+        logger.info("Owner with id {} created", ownerId);
 
         return owner;
     }
@@ -131,12 +153,10 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
                 given()
                         .spec(requestSpec)
                         .pathParam("ownerId", owner.getId())
-                        .log().all()
                         .when()
                         .get(READ_PATH)
                         .then()
                         .spec(responseSpec)
-                        .log().all()
                         .statusCode(200)
                         .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
                         .extract().response();
@@ -159,12 +179,10 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
                         .spec(requestSpec)
                         .pathParam("ownerId", id)
                         .body(body)
-                        .log().all()
                         .when()
                         .put(UPDATE_PATH)
                         .then()
                         .spec(responseSpec)
-                        .log().all()
                         //.statusCode(200) //according to Swagger it should be 200 OK with response body, but in reality it's 204 with no body
                         .statusCode(204)
                         //.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
