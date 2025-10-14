@@ -108,7 +108,7 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
 
     @Test
     public void updateReadWorkflowTest() throws Exception {
-        executeWithLogging(this::updateReadWorkflowTestLogic, "executeWithLogging");
+        executeWithLogging(this::updateReadWorkflowTestLogic, "updateReadWorkflowTest");
     }
 
     private void updateReadWorkflowTestLogic() throws JsonProcessingException {
