@@ -15,7 +15,9 @@ import org.slf4j.MDC;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static base.TestStatus.*;
 import static config.ApiConfig.*;
+import static net.logstash.logback.argument.StructuredArguments.kv;
 import static org.hamcrest.Matchers.lessThan;
 
 public class ApiTestBase {
@@ -44,10 +46,39 @@ public class ApiTestBase {
 
     protected void executeWithLogging(TestLogic testLogic, String testName) throws Exception {
         MDC.put("test_id", UUID.randomUUID().toString());
+        TestStatus status = SUCCESS;
+        long start = 0, durationNs, durationMs;
         try {
             logger.info("Start test {}", testName);
+            start = System.nanoTime();
             testLogic.run();
-            logger.info("Success test {}", testName);
+            durationNs = System.nanoTime() - start;
+            durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
+            logger.info("Test {} completed", testName,
+                    kv("test_duration_ns", durationNs),
+                    kv("test_duration_ms", durationMs),
+                    kv("test_status", status)
+            );
+        } catch (AssertionError ae) {
+            durationNs = System.nanoTime() - start;
+            durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
+            status = FAILED;
+            logger.error("Test {} failed", testName,
+                    kv("test_duration_ns", durationNs),
+                    kv("test_duration_ms", durationMs),
+                    kv("test_status", status)
+            );
+            throw ae;
+        } catch (Exception e) {
+            durationNs = System.nanoTime() - start;
+            durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
+            status = ERROR;
+            logger.error("Test {} has thrown an error '{}'", testName, e.getMessage(),
+                    kv("test_duration_ns", durationNs),
+                    kv("test_duration_ms", durationMs),
+                    kv("test_status", status)
+            );
+            throw e;
         } finally {
             MDC.clear();
         }

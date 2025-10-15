@@ -11,11 +11,10 @@ import io.restassured.specification.ResponseSpecification;
 import mapper.OwnerMapper;
 import model.Owner;
 import org.assertj.core.api.SoftAssertions;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import util.DatabaseUtils;
 import util.ValidationUtils;
 
@@ -32,8 +31,11 @@ import static data.OwnerFactory.getOwnerDataFromDatabase;
 import static data.OwnerFactory.getRandomOwnerTestData;
 import static io.restassured.RestAssured.given;
 import static model.Owner.FIELD_ID;
+import static net.logstash.logback.argument.StructuredArguments.kv;
 import static org.hamcrest.Matchers.lessThan;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+//using TestMethodOrder for ordering tests so that warmup always runs first
 public class CrudOwnerWorkflowTests extends ApiTestBase {
     private final static Logger logger = LoggerFactory.getLogger(CrudOwnerWorkflowTests.class);
 
@@ -46,6 +48,47 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
+    @Order(1)
+    //warmup test running first ensures that we get more accurate execution times for our actual tests
+    //without warmup the first test in suit will accumulate that warmup time
+    public void warmupTest() throws Exception {
+        executeWithLogging(this::warmupTestLogic, "warmupTest");
+    }
+
+    private void warmupTestLogic() throws JsonProcessingException {
+        Map<String, Object> createOwnerData = getRandomOwnerTestData();
+        String body = mapper.writeValueAsString(createOwnerData);
+        Response response =
+                given()
+                        .spec(requestSpec)
+                        .body(body)
+                        .when()
+                        .post(CREATE_PATH)
+                        .then()
+                        .spec(responseSpec)
+                        .statusCode(201)
+                        .body(JsonSchemaValidator.matchesJsonSchemaInClasspath(ValidationUtils.OWNER_SCHEMA))
+                        .extract().response();
+        Owner owner = response.jsonPath().getObject("", Owner.class);
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(owner.getFirstName()).isEqualTo(createOwnerData.get(Owner.FIELD_FIRSTNAME));
+        softly.assertThat(owner.getLastName()).isEqualTo(createOwnerData.get(Owner.FIELD_LASTNAME));
+        softly.assertThat(owner.getAddress()).isEqualTo(createOwnerData.get(Owner.FIELD_ADDRESS));
+        softly.assertThat(owner.getCity()).isEqualTo(createOwnerData.get(Owner.FIELD_CITY));
+        softly.assertThat(owner.getTelephone()).isEqualTo(createOwnerData.get(Owner.FIELD_TELEPHONE));
+
+        int ownerId = owner.getId();
+        logger.info("Warmup: Owner with id {} created", ownerId, kv(Owner.FIELD_ID, ownerId));
+        MDC.put(Owner.FIELD_ID, String.valueOf(ownerId));
+
+        createOwnerData.put(Owner.FIELD_ID, ownerId);
+        assertOwnerDbData(getOwnerDataFromDatabase(ownerId), createOwnerData, softly);
+        softly.assertAll();
+    }
+
+    @Test
+    @Order(2)
     public void createReadWorkflowTest() throws Exception {
         executeWithLogging(this::createReadWorkflowTestLogic, "createReadWorkflowTest");
     }
@@ -60,6 +103,7 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
+    @Order(2)
     public void createUpdateWorkflowTest() throws Exception {
         executeWithLogging(this::createUpdateWorkflowTestLogic, "createUpdateWorkflowTest");
     }
@@ -73,6 +117,7 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
+    @Order(2)
     public void createDeleteWorkflowTest() throws Exception {
         executeWithLogging(this::createDeleteWorkflowTestLogic, "createDeleteWorkflowTest");
     }
@@ -107,6 +152,7 @@ public class CrudOwnerWorkflowTests extends ApiTestBase {
     }
 
     @Test
+    @Order(2)
     public void updateReadWorkflowTest() throws Exception {
         executeWithLogging(this::updateReadWorkflowTestLogic, "updateReadWorkflowTest");
     }

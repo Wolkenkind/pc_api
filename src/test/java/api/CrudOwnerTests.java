@@ -53,7 +53,11 @@ public class CrudOwnerTests extends ApiTestBase {
     public void cleanup() throws SQLException {
         DatabaseUtils.cleanDatabase();
     }
-
+    /*
+        Test durations are measured without any warmup done what lead that the first test in the suite will
+        accumulate this warmup time. Usually one of negative test runs does it, so it's clear
+        CrudOwnerWorkflowTests use the warmupTest-approach, see it for info & comparison
+     */
     @Test
     public void createOwner() throws Exception {
         executeWithLogging(this::createOwnerLogic, "createOwner");
