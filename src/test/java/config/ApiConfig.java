@@ -1,26 +1,15 @@
 package config;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import static util.ConfigUtils.getValue;
 
 public class ApiConfig {
     public static final String BASE_URL;
     public static final String BASE_API_PATH;
     public static final long RESPONSE_TIME_THRESHOLD;
-    //public static final String BASE_URL;
 
     static {
-        Properties props = new Properties();
-        try {
-            props.load(new FileInputStream("src/test/resources/application.properties"));
-        } catch (IOException e) {
-            System.out.println("Critical error during test initialisation:");
-            throw new RuntimeException(e);
-        }
-
-        BASE_URL = props.getProperty("base.url");
-        BASE_API_PATH = props.getProperty("base.api.path");
-        RESPONSE_TIME_THRESHOLD = Long.parseLong(props.getProperty("base.response.time.ms"));
+        BASE_URL = getValue("BASE_URL", "http://localhost:9966/petclinic");
+        BASE_API_PATH = getValue("BASE_API_PATH", "/api");
+        RESPONSE_TIME_THRESHOLD = Long.parseLong(getValue("API_RESPONSE_TIME", "5000"));
     }
 }

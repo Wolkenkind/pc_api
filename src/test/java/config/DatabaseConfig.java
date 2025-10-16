@@ -1,25 +1,34 @@
 package config;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import static util.ConfigUtils.getValue;
 
 public class DatabaseConfig {
     public static final String URL;
+    public static final String HOST;
+    public static final String PORT;
     public static final String USERNAME;
     public static final String PASSWORD;
+    public static final String VENDOR;
+
+    private static final String PG = "postgres";
+    private static final String MSQL = "mysql";
 
     static {
-        Properties props = new Properties();
+        USERNAME = getValue("DB_USER", "petclinic");
+        PASSWORD = getValue("DB_PASSWORD", "petclinic");
+        HOST = getValue("DB_HOST", "localhost");
+        PORT = getValue("DB_PORT", "5432");
+        VENDOR = getValue("DB_VENDOR", PG);
         try {
-            props.load(new FileInputStream("src/test/resources/application.properties"));
-        } catch (IOException e) {
-            System.out.println("Critical error during test initialisation:");
-            throw new RuntimeException(e);
+            URL = switch (VENDOR) {
+                case PG -> "jdbc:postgresql://" + HOST + ":" + PORT + "/petclinic";
+                case MSQL -> "not_implemented";
+                default -> throw new IllegalArgumentException("Unknown DB vendor!");
+            };
+        } catch (IllegalArgumentException e) {
+            System.err.println("FATAL: " + e.getMessage());
+            System.err.println("Supported vendors: " + PG + ", " + MSQL);
+            throw e;
         }
-
-        URL = props.getProperty("db.url");
-        USERNAME = props.getProperty("db.username");
-        PASSWORD = props.getProperty("db.password");
     }
 }

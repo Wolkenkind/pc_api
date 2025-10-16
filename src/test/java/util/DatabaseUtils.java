@@ -1,5 +1,7 @@
 package util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -12,11 +14,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static config.DatabaseConfig.*;
+import static net.logstash.logback.argument.StructuredArguments.kv;
 
 public class DatabaseUtils {
 
+    private final static Logger logger = LoggerFactory.getLogger(DatabaseUtils.class);
+
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        try {
+            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            logger.error("Error connecting to database",
+                    kv("db_url", URL),
+                    kv("db_user", USERNAME),
+                    kv("cause_message", e.getMessage()));
+            throw new RuntimeException(e);
+        }
     }
 
     public static JdbcTemplate createTemplate() {
@@ -31,7 +44,15 @@ public class DatabaseUtils {
     }
 
     private static DataSource createDataSource() {
-        return new SingleConnectionDataSource(URL, USERNAME, PASSWORD, true);
+        try {
+            return new SingleConnectionDataSource(URL, USERNAME, PASSWORD, true);
+        } catch (Exception e) {
+            logger.error("Error connecting to datasource",
+                    kv("db_url", URL),
+                    kv("db_user", USERNAME),
+                    kv("cause_message", e.getMessage()));
+            throw new RuntimeException(e);
+        }
     }
 
     public static void cleanDatabase() throws SQLException {
@@ -52,6 +73,12 @@ public class DatabaseUtils {
 
             // Re-enable foreign key checks
             stmt.execute("SET session_replication_role = 'origin'");
+        } catch (Exception e) {
+            logger.error("Error cleaning database",
+                    kv("db_url", URL),
+                    kv("db_user", USERNAME),
+                    kv("cause_message", e.getMessage()));
+            throw new RuntimeException(e);
         }
     }
 }

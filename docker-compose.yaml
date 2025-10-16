@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  api-tests:
+    build: .
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=petclinic
+      - DB_PASSWORD=petclinic
+      - DB_VENDOR=postgres
+      - BASE_URL=http://petclinic-app:9966/petclinic
+    depends_on:
+      - postgres
+      - petclinic-app
+
+  petclinic-app:
+    image: springcommunity/spring-petclinic-rest:latest
+    ports:
+      - "9966:9966"
+    environment:
+      - SPRING_PROFILES_ACTIVE=spring-data-jpa,postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/petclinic
+      - SPRING_DATASOURCE_USERNAME=petclinic
+      - SPRING_DATASOURCE_PASSWORD=petclinic
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=petclinic
+      - POSTGRES_PASSWORD=petclinic
+      - POSTGRES_DB=petclinic
+    ports:
+      - "5432:5432"
