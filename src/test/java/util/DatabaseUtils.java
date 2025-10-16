@@ -20,7 +20,7 @@ public class DatabaseUtils {
 
     private final static Logger logger = LoggerFactory.getLogger(DatabaseUtils.class);
 
-    public static Connection getConnection() throws SQLException {
+    public static Connection getConnection() {
         try {
             return DriverManager.getConnection(URL, USERNAME, PASSWORD);
         } catch (SQLException e) {
@@ -55,7 +55,7 @@ public class DatabaseUtils {
         }
     }
 
-    public static void cleanDatabase() throws SQLException {
+    public static void cleanDatabase() {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
