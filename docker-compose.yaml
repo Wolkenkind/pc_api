@@ -14,7 +14,7 @@ services:
       - petclinic-app
 
   petclinic-app:
-    image: springcommunity/spring-petclinic-rest:latest
+    image: springcommunity/spring-petclinic-rest:3.4.3
     ports:
       - "9966:9966"
     environment:
