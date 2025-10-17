@@ -54,6 +54,9 @@ public class ApiTestBase {
             testLogic.run();
             durationNs = System.nanoTime() - start;
             durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
+            //for Loki
+            MDC.put("test_duration_ms", String.valueOf(durationMs));
+            MDC.put("test_status", status.toString());
             logger.info("Test {} completed", testName,
                     kv("test_duration_ns", durationNs),
                     kv("test_duration_ms", durationMs),
@@ -63,6 +66,9 @@ public class ApiTestBase {
             durationNs = System.nanoTime() - start;
             durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
             status = FAILED;
+            //for Loki
+            MDC.put("test_duration_ms", String.valueOf(durationMs));
+            MDC.put("test_status", status.toString());
             logger.error("Test {} failed", testName,
                     kv("test_duration_ns", durationNs),
                     kv("test_duration_ms", durationMs),
@@ -73,6 +79,9 @@ public class ApiTestBase {
             durationNs = System.nanoTime() - start;
             durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
             status = ERROR;
+            //for Loki
+            MDC.put("test_duration_ms", String.valueOf(durationMs));
+            MDC.put("test_status", status.toString());
             logger.error("Test {} has thrown an error '{}'", testName, e.getMessage(),
                     kv("test_duration_ns", durationNs),
                     kv("test_duration_ms", durationMs),

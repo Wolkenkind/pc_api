@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOKI_URL" value="${LOKI_URL:-http://localhost:3100}"/>
+
     <!-- JSON Appender for structured logging -->
     <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
@@ -14,6 +16,34 @@
         </encoder>
     </appender>
 
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${LOKI_URL}/loki/api/v1/push</url>
+        </http>
+
+        <labels>
+            app=api-tests
+            host=${HOSTNAME}
+            environment=${ENVIRONMENT:-local}
+        </labels>
+
+        <message>
+            <pattern>%d{ISO8601} [%thread] %level %logger - %msg %mdc %ex{short}</pattern>
+        </message>
+
+        <batch>
+            <maxItems>100</maxItems>
+            <timeoutMs>10000</timeoutMs>
+            <maxBytes>1048576</maxBytes>
+        </batch>
+    </appender>
+
+    <!-- Async wrapper for better performance -->
+    <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOKI" />
+        <discardingThreshold>200</discardingThreshold>
+    </appender>
+
     <!-- Standard Console Appender for local development -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -26,6 +56,7 @@
         <then>
             <root level="INFO">
                 <appender-ref ref="JSON" />
+                <appender-ref ref="ASYNC_LOKI" />
             </root>
         </then>
         <else>
@@ -39,7 +70,7 @@
     <logger name="api" level="DEBUG"/>
     <logger name="data" level="DEBUG"/>
 
-    <!-- CRITICAL: Configure RestAssured to use SLF4J -->
+    <!-- Configure RestAssured to use SLF4J -->
     <logger name="io.restassured" level="DEBUG"/>
     <logger name="io.restassured.filter.log" level="DEBUG"/>
 

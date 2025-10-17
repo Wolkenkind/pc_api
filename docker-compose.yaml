@@ -9,9 +9,11 @@ services:
       - DB_PASSWORD=petclinic
       - DB_VENDOR=postgres
       - BASE_URL=http://petclinic-app:9966/petclinic
+     # - LOKI_URL=http://loki:3100 # uncomment this to run with Loki
     depends_on:
       - postgres
       - petclinic-app
+      - loki
 
   petclinic-app:
     image: springcommunity/spring-petclinic-rest:3.4.3
@@ -34,3 +36,19 @@ services:
       - POSTGRES_DB=petclinic
     ports:
       - "5432:5432"
+
+  # Loki Stack
+  loki:
+    image: grafana/loki:3.4.1
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:12.3.0-18578466485
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
