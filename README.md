@@ -16,7 +16,7 @@ Tests were written using [JUnit 5][2] and [REST Assured][3], using [JavaFaker][4
 ```bash
 # Clone and run with Docker Compose
 git clone https://github.com/Wolkenkind/pc_api.git
-cd pc_api_tests
+cd pc_api
 docker compose up --build api-tests
 ```
 ---
