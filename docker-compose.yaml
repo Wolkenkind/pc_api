@@ -13,6 +13,7 @@ services:
     depends_on:
       - postgres
       - petclinic-app
+      - grafana
       - loki
 
   petclinic-app:
